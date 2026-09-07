@@ -1,0 +1,49 @@
+[package]
+name = "tuner"
+version = "1.0.0"
+edition = "2021"
+description = "A 90s cable box for a folder of video files"
+
+[dependencies]
+ffmpeg-next = "7"
+winit = "0.30"
+fontdue = "0.9"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+cpal = "0.15"
+chrono = "0.4"
+png = "0.18"
+ureq = { version = "2", default-features = false, features = ["tls"] }
+wgpu = { version = "25", default-features = false, features = ["vulkan", "gles", "wgsl"] }
+pollster = "0.4"
+
+[target.'cfg(windows)'.dependencies]
+windows = { version = "0.62", features = ["Win32_Foundation", "Win32_Graphics_Direct3D", "Win32_Graphics_Direct3D_Fxc", "Win32_Graphics_Direct3D11", "Win32_Graphics_Dxgi", "Win32_Graphics_Dxgi_Common", "Win32_UI_WindowsAndMessaging", "Win32_System_Com", "Win32_UI_Shell", "Win32_UI_Shell_Common", "Win32_System_Console", "Win32_System_Threading", "Win32_Security", "Win32_Graphics_Gdi"] }
+webview2-com = "0.39"
+
+[features]
+# Force the wgpu (Vulkan/OpenGL) presenter on Windows too, for testing the Linux path.
+wgpu-render = []
+
+[lib]
+name = "tuner"
+path = "src/lib.rs"
+
+[[bin]]
+name = "tuner"
+path = "src/main.rs"
+
+[[bin]]
+name = "tuner-setup"
+path = "src/setup.rs"
+
+[[bin]]
+name = "launcher"
+path = "src/launcher.rs"
+
+[target.'cfg(windows)'.build-dependencies]
+winresource = "0.1"
+
+[profile.release]
+opt-level = 3
+debug = 1

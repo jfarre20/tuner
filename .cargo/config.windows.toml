@@ -1,0 +1,4 @@
+# Windows dev machine paths. Copy to .cargo/config.toml (gitignored) and edit for yours.
+[env]
+FFMPEG_DIR = "C:/ffmpeg"        # a BtbN ffmpeg-n6.x-win64-gpl-shared unpack: has bin/, include/, lib/
+LIBCLANG_PATH = "C:/LLVM/bin"    # from an LLVM release (bindgen needs libclang.dll)

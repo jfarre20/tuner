@@ -1,0 +1,325 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>TUNER set up</title>
+<style>
+  :root { --bg:#0c0c1e; --panel:#141438; --line:#2a2a6a; --text:#e8e8f4; --dim:#a0a0c8; --hud:#2cf53c; --yel:#ffe040; --red:#ff5050; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font: 14px/1.4 "Segoe UI", system-ui, sans-serif; }
+  header { display:flex; align-items:center; gap:16px; padding:14px 22px; background:#08082a; border-bottom:2px solid var(--line); position:sticky; top:0; z-index:5; }
+  header h1 { margin:0; font: 700 22px/1 Consolas, "Courier New", monospace; color:var(--hud); letter-spacing:2px; text-shadow:2px 2px 0 #000; }
+  header .sp { flex:1; }
+  button { font:inherit; padding:7px 14px; border:2px solid var(--line); background:#1c1c50; color:var(--text); cursor:pointer; border-radius:3px; }
+  button:hover { background:#26267a; }
+  button.primary { background:#1e6b2a; border-color:#2cf53c; }
+  button.primary:hover { background:#268a36; }
+  button.danger { border-color:var(--red); }
+  button.small { padding:3px 9px; font-size:12px; }
+  main { padding:18px 22px 60px; max-width:1200px; margin:0 auto; }
+  section { background:var(--panel); border:1px solid var(--line); border-radius:6px; padding:14px 18px; margin-bottom:16px; }
+  section h2 { margin:0 0 10px; font: 700 13px/1 Consolas, monospace; color:var(--yel); letter-spacing:2px; text-transform:uppercase; }
+  .grid { display:grid; grid-template-columns: 180px 1fr auto; gap:8px 12px; align-items:center; }
+  .grid label { color:var(--dim); }
+  .grid .full { grid-column: 2 / span 2; }
+  input[type=text], input[type=number], select, textarea { font:inherit; padding:6px 8px; background:#08081c; color:var(--text); border:1px solid var(--line); border-radius:3px; width:100%; }
+  textarea { resize: vertical; min-height:54px; font-family: Consolas, monospace; font-size:12px; }
+  input[type=range] { width:100%; }
+  .row { display:flex; gap:8px; align-items:center; }
+  .row > * { flex:1; }
+  .row > button { flex:0 0 auto; }
+  .toggles { display:grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap:6px 18px; }
+  .toggles label { display:flex; gap:8px; align-items:center; color:var(--text); cursor:pointer; }
+  .knobs { display:grid; grid-template-columns: 160px 1fr 60px; gap:6px 12px; align-items:center; }
+  .knobs label { color:var(--dim); }
+  .knobs output { text-align:right; font-family:Consolas, monospace; }
+  table { width:100%; border-collapse:collapse; }
+  th { text-align:left; color:var(--dim); font-weight:600; font-size:12px; padding:4px 6px; border-bottom:1px solid var(--line); }
+  td { padding:6px 6px; border-bottom:1px solid #1e1e50; vertical-align:top; }
+  td input[type=number] { width:64px; }
+  td select { width:auto; }
+  .sources { display:flex; flex-direction:column; gap:4px; }
+  .sources .src { display:flex; gap:4px; }
+  .sources .src input { flex:1; }
+  .hint { color:var(--dim); font-size:12px; margin-top:6px; }
+  #status { font-family:Consolas, monospace; color:var(--hud); min-width:220px; text-align:right; }
+  #status.err { color:var(--red); }
+  .dir { font-family:Consolas, monospace; font-size:12px; color:var(--dim); }
+  .wiz-only { display:none; }
+  body.wizard .wiz-only { display:block; }
+  body.wizard .normal-only { display:none; }
+  body.wizard main > section { display:none; }
+  body.wizard main > section.active { display:block; }
+  #wiznav { display:none; align-items:center; gap:10px; padding:14px 0; border-top:1px solid var(--line); }
+  body.wizard #wiznav { display:flex; }
+  #wiznav .sp { flex:1; }
+</style>
+</head>
+<body>
+<header>
+  <h1>TUNER</h1>
+  <span class="dir" id="dir"></span>
+  <span class="sp"></span>
+  <span id="status"></span>
+  <span class="normal-only"><button id="wizard">Wizard</button>
+  <button id="revert">Revert</button>
+  <button id="save">Save</button>
+  <button id="launch" class="primary">Save &amp; launch</button></span>
+</header>
+<main>
+
+<section id="welcome" class="wiz-only">
+  <h2>Welcome</h2>
+  <p style="font-size:16px;margin:6px 0 10px">This turns a folder of video files into a cable box: always-on channels you flip through, snow in between, a Prevue-style guide. Nothing is uploaded or rearranged; it only reads your files.</p>
+  <p class="hint">The next screens ask for your video folder (required) and a few optional extras: network logos, station idents, hold music, a WeatherStar channel, and how the picture should look. Everything can be changed later in this tool, or in the tuner with the <b>S</b> key.</p>
+</section>
+
+<section id="folders">
+  <h2>Folders</h2>
+  <div class="hint wiz-only" style="margin:0 0 10px">Only the content library is required. Point it at a folder of mp4 / mkv / mov / webm / avi files; every file becomes part of a channel's loop. "Channels" is how many channels the folder is dealt across (fewer channels = longer loops).</div>
+  <div class="grid">
+    <label>Content library</label><input type="text" id="content_dir"><button class="small" data-browse="content_dir">Browse…</button>
+    <label>Channels to deal it across</label><input type="number" id="channels" min="1" max="999"><span class="hint">Lineup channels below add to this if numbered higher.</span>
+    <label>Logo folders</label><input type="text" id="logo_dirs" placeholder="folder;folder"><button class="small" data-browse="logo_dirs" data-append="1">Add…</button>
+    <label>Station idents</label><input type="text" id="bumper_dir"><button class="small" data-browse="bumper_dir">Browse…</button>
+    <label>Hold music</label><input type="text" id="music_dir"><button class="small" data-browse="music_dir">Browse…</button>
+  </div>
+  <div class="hint">Logo PNG file names become network names (<code>MTV (US).png</code> → MTV). Idents: one subfolder per network, matched by name.</div>
+</section>
+
+<section id="weather">
+  <h2>WeatherStar</h2>
+  <div class="hint wiz-only" style="margin:0 0 10px">Optional. A Weather Channel "local forecast" channel, served by a local copy of <code>ws3kp</code> (git clone https://github.com/netbymatt/ws3kp, then <code>npm install</code> in it; needs Node.js). Pick that folder and enter your ZIP. Leave the folder empty to skip.</div>
+  <div class="grid">
+    <label>ws3kp folder</label><input type="text" id="weather_dir"><button class="small" data-browse="weather_dir">Browse…</button>
+    <label>Page URL</label><input type="text" id="weather_url" class="full" placeholder="http://localhost:8083/  (empty = no weather channel)">
+    <label>ZIP code</label><input type="text" id="weather_zip" maxlength="5" class="full" placeholder="5 digits; looked up on next tuner start">
+    <label>Location</label><span class="full" id="weather_location"></span>
+  </div>
+</section>
+
+<section id="picture">
+  <h2>Picture</h2>
+  <div class="hint wiz-only" style="margin:0 0 10px">The CRT tube adds scanlines, curvature and noise (C toggles it in the tuner). FIT keeps each file's shape; STRETCH fills the window. All of this is also in the tuner's S menu.</div>
+  <div class="toggles" style="margin-bottom:10px">
+    <label><input type="checkbox" id="crt"> CRT tube</label>
+    <label>Aspect <select id="aspect"><option value="0">FIT</option><option value="1">4:3</option><option value="2">16:9</option><option value="3">STRETCH</option></select></label>
+    <label>HUD colour <select id="hud"><option value="0">GREEN</option><option value="1">WHITE</option><option value="2">AMBER</option><option value="3">CYAN</option><option value="4">MAGENTA</option></select></label>
+  </div>
+  <div class="knobs">
+    <label>CRT curvature</label><input type="range" id="crt_curve" min="0" max="0.12" step="0.005"><output for="crt_curve"></output>
+    <label>CRT scanlines</label><input type="range" id="crt_scan" min="0" max="1" step="0.05"><output for="crt_scan"></output>
+    <label>CRT noise</label><input type="range" id="crt_noise" min="0" max="0.1" step="0.005"><output for="crt_noise"></output>
+    <label>CRT vignette</label><input type="range" id="crt_vignette" min="0" max="0.5" step="0.02"><output for="crt_vignette"></output>
+    <label>Overscan</label><input type="range" id="overscan" min="-0.1" max="0.1" step="0.01"><output for="overscan"></output>
+  </div>
+</section>
+
+<section id="features">
+  <h2>Features</h2>
+  <div class="hint wiz-only" style="margin:0 0 10px">Logo bugs, corner clocks and news crawls need the logo folder; idents need the idents folder; hold music needs the music folder. They quietly do nothing otherwise.</div>
+  <div class="toggles">
+    <label><input type="checkbox" id="logos"> Channel logo bugs</label>
+    <label><input type="checkbox" id="clocks"> Corner clocks (news hours)</label>
+    <label><input type="checkbox" id="ticker"> News tickers</label>
+    <label><input type="checkbox" id="bumpers"> Station idents between programs</label>
+    <label><input type="checkbox" id="snow"> Snow between channels</label>
+    <label><input type="checkbox" id="music"> Hold music on the Prevue channel</label>
+    <label><input type="checkbox" id="clock_24h"> 24-hour clock</label>
+  </div>
+</section>
+
+<section id="lineup-section">
+  <h2>Channel lineup</h2>
+  <div class="hint" style="margin:0 0 10px">Optional. Any channel number you list here is yours to define; the rest are dealt automatically from the content library. A channel with source folders plays exactly those files. A channel without sources still gets your name, logo and dressing.</div>
+  <table id="lineup">
+    <thead><tr><th>Ch</th><th>Name</th><th>Logo</th><th>Source folders</th><th>Order</th><th>Bug</th><th>Clock</th><th>Ticker</th><th>Idents</th><th></th></tr></thead>
+    <tbody></tbody>
+  </table>
+  <div class="row" style="margin-top:10px"><button id="add" class="small" style="flex:0 0 auto">+ Add channel</button><span class="hint">Idents: <code>auto</code> uses the network's folder (or any), <code>off</code> disables, or type a folder name under the idents folder.</span></div>
+</section>
+
+<div id="wiznav" class="wiz-only">
+  <span id="wizstep" class="hint"></span>
+  <span class="sp"></span>
+  <button id="wizback">Back</button>
+  <button id="wiznext" class="primary">Next</button>
+</div>
+</main>
+<script>
+const $ = id => document.getElementById(id);
+const post = o => window.chrome && window.chrome.webview && window.chrome.webview.postMessage(o);
+const BOOLS = ['crt','logos','clocks','ticker','bumpers','snow','music','clock_24h'];
+const TEXTS = ['content_dir','logo_dirs','bumper_dir','music_dir','weather_dir','weather_url','weather_zip'];
+const NUMS = ['channels','crt_curve','crt_scan','crt_noise','crt_vignette','overscan','aspect','hud'];
+let state = { settings: {}, lineup: { channels: [] }, logos: [] };
+let dirty = false;
+
+function status(t, err) { const s = $('status'); s.textContent = t; s.className = err ? 'err' : ''; }
+function markDirty() { dirty = true; status('unsaved changes'); }
+
+function fill() {
+  const s = state.settings;
+  for (const k of BOOLS) $(k).checked = !!s[k];
+  for (const k of TEXTS) $(k).value = s[k] ?? '';
+  for (const k of NUMS) $(k).value = s[k] ?? 0;
+  $('weather_location').textContent = s.weather_location ? `${s.weather_location} (${(+s.weather_lat).toFixed(3)}, ${(+s.weather_lon).toFixed(3)})` : '';
+  document.querySelectorAll('input[type=range]').forEach(r => showKnob(r));
+  renderLineup();
+  dirty = false;
+}
+function showKnob(r) {
+  const o = document.querySelector(`output[for=${r.id}]`);
+  const v = +r.value;
+  o.textContent = r.id === 'overscan' ? (v >= 0 ? '+' : '') + Math.round(v * 100) + '%' : Math.round(v * (r.max <= 0.13 ? 1000 : r.max <= 0.6 ? 200 : 100)) + '%';
+}
+function collect() {
+  const s = Object.assign({}, state.settings);
+  for (const k of BOOLS) s[k] = $(k).checked;
+  for (const k of TEXTS) s[k] = $(k).value.trim();
+  for (const k of NUMS) s[k] = +$(k).value;
+  s.channels = Math.max(1, Math.round(s.channels) || 1); s.aspect = Math.round(s.aspect) || 0; s.hud = Math.round(s.hud) || 0;
+  for (const k of ['crt_curve','crt_scan','crt_noise','crt_vignette','overscan']) if (!isFinite(s[k])) s[k] = 0;
+  const chans = [];
+  document.querySelectorAll('#lineup tbody tr').forEach(tr => {
+    const q = sel => tr.querySelector(sel);
+    const num = Math.round(+q('.num').value);
+    if (!num) return;
+    chans.push({
+      number: num,
+      name: q('.name').value.trim(),
+      logo: q('.logo').value,
+      sources: [...tr.querySelectorAll('.src input')].map(i => i.value.trim()).filter(Boolean),
+      shuffle: q('.order').value === 'shuffle',
+      bug: q('.bug').value, clock: q('.clock').value, ticker: q('.ticker').value,
+      idents: q('.idents').value.trim() || 'auto',
+    });
+  });
+  chans.sort((a, b) => a.number - b.number);
+  return { settings: s, lineup: { channels: chans } };
+}
+
+function logoOptions(sel) {
+  return ['<option value="">— none —</option>'].concat(state.logos.map(n => `<option value="${esc(n)}"${n === sel ? ' selected' : ''}>${esc(n)}</option>`)).join('');
+}
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const opt = (vals, sel) => vals.map(([v, l]) => `<option value="${v}"${v === sel ? ' selected' : ''}>${l}</option>`).join('');
+
+function rowHtml(c) {
+  const srcs = (c.sources && c.sources.length ? c.sources : ['']).map(s => srcHtml(s)).join('');
+  return `<tr>
+    <td><input type="number" class="num" min="1" max="999" value="${c.number || ''}"></td>
+    <td><input type="text" class="name" value="${esc(c.name || '')}" placeholder="(logo name)"></td>
+    <td><select class="logo">${logoOptions(c.logo || '')}</select></td>
+    <td><div class="sources">${srcs}</div><button class="small addsrc" style="margin-top:4px">+ folder</button></td>
+    <td><select class="order">${opt([['shuffle','Shuffle'],['alpha','A→Z']], c.shuffle === false ? 'alpha' : 'shuffle')}</select></td>
+    <td><select class="bug">${opt([['auto','auto'],['off','off'],['br','bottom right'],['bl','bottom left'],['tl','top left']], c.bug || 'auto')}</select></td>
+    <td><select class="clock">${opt([['auto','auto'],['on','on'],['off','off']], c.clock || 'auto')}</select></td>
+    <td><select class="ticker">${opt([['auto','auto'],['on','on'],['off','off']], c.ticker || 'auto')}</select></td>
+    <td><input type="text" class="idents" value="${esc(c.idents || 'auto')}" style="width:90px"></td>
+    <td><button class="small danger del">✕</button></td>
+  </tr>`;
+}
+const srcHtml = s => `<div class="src"><input type="text" value="${esc(s)}" placeholder="folder"><button class="small browse">…</button><button class="small rm">✕</button></div>`;
+
+function renderLineup() {
+  $('lineup').querySelector('tbody').innerHTML = state.lineup.channels.map(rowHtml).join('');
+}
+
+// Delegated events for the lineup table.
+$('lineup').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  e.preventDefault();
+  const tr = b.closest('tr');
+  if (b.classList.contains('del')) { tr.remove(); markDirty(); }
+  else if (b.classList.contains('addsrc')) { tr.querySelector('.sources').insertAdjacentHTML('beforeend', srcHtml('')); markDirty(); }
+  else if (b.classList.contains('rm')) { b.closest('.src').remove(); markDirty(); }
+  else if (b.classList.contains('browse')) {
+    const input = b.closest('.src').querySelector('input');
+    pending = input;
+    post({ cmd: 'browse', field: '__src', start: input.value });
+  }
+});
+$('lineup').addEventListener('input', markDirty);
+$('lineup').addEventListener('change', markDirty);
+$('add').onclick = () => {
+  const used = [...document.querySelectorAll('.num')].map(i => +i.value);
+  let n = Math.max(+$('channels').value || 0, ...used, 0) + 1;
+  $('lineup').querySelector('tbody').insertAdjacentHTML('beforeend', rowHtml({ number: n, shuffle: true }));
+  markDirty();
+};
+
+// Folder browse buttons in the settings sections.
+let pending = null;
+document.querySelectorAll('[data-browse]').forEach(b => b.onclick = () => {
+  const id = b.dataset.browse;
+  const cur = $(id).value;
+  post({ cmd: 'browse', field: id, append: !!b.dataset.append, start: b.dataset.append ? (cur.split(';').pop() || '') : cur });
+});
+document.querySelectorAll('main input, main select, main textarea').forEach(el => {
+  el.addEventListener('input', () => { if (el.type === 'range') showKnob(el); markDirty(); });
+  el.addEventListener('change', markDirty);
+});
+
+$('save').onclick = () => { const c = collect(); post({ cmd: 'save', ...c }); };
+$('launch').onclick = () => { const c = collect(); post({ cmd: 'launch', ...c }); };
+$('revert').onclick = () => post({ cmd: 'load' });
+
+// ---- wizard: one section at a time, Back / Next, Finish saves and launches.
+const STEPS = ['welcome', 'folders', 'weather', 'picture', 'features', 'lineup-section'];
+let wizStep = 0;
+function setWizard(on) {
+  document.body.classList.toggle('wizard', on);
+  if (on) { wizStep = 0; showStep(); }
+}
+function showStep() {
+  document.querySelectorAll('main > section').forEach(s => s.classList.remove('active'));
+  const sec = $(STEPS[wizStep]);
+  sec.classList.add('active');
+  const last = wizStep === STEPS.length - 1;
+  $('wizstep').textContent = wizStep === 0 ? '' : `Step ${wizStep} of ${STEPS.length - 1}`;
+  $('wizback').disabled = wizStep === 0;
+  $('wiznext').textContent = last ? 'Finish & launch' : (wizStep === 0 ? 'Start' : 'Next');
+  window.scrollTo(0, 0);
+}
+$('wizback').onclick = () => { if (wizStep > 0) { wizStep--; showStep(); } };
+$('wiznext').onclick = () => {
+  if (STEPS[wizStep] === 'folders') {
+    if (!$('content_dir').value.trim()) { status('choose the content library folder first', true); $('content_dir').focus(); return; }
+    if (!(+$('channels').value >= 1)) $('channels').value = 20;
+  }
+  if (STEPS[wizStep] === 'weather') {
+    // A ws3kp folder without a URL means "serve it locally".
+    if ($('weather_dir').value.trim() && !$('weather_url').value.trim()) $('weather_url').value = 'http://localhost:8083/';
+    if (!$('weather_dir').value.trim() && $('weather_url').value.trim() === 'http://localhost:8083/') $('weather_url').value = '';
+  }
+  if (wizStep === STEPS.length - 1) { const c = collect(); post({ cmd: 'launch', ...c }); return; }
+  wizStep++; showStep();
+};
+$('wizard').onclick = () => setWizard(true);
+
+window.chrome && window.chrome.webview && window.chrome.webview.addEventListener('message', e => {
+  const m = e.data;
+  if (m.type === 'state') {
+    const first = !state.settings || Object.keys(state.settings).length === 0;
+    state = m; fill(); $('dir').textContent = m.dir; status(m.wizard && first ? '' : 'loaded');
+    if (m.wizard && first) setWizard(true);
+  } else if (m.type === 'picked') {
+    if (m.field === '__src') { if (pending) { pending.value = m.path; pending = null; } }
+    else if (m.field === 'logo_dirs') { const v = $(m.field).value.trim(); $(m.field).value = v ? v + ';' + m.path : m.path; }
+    else $(m.field).value = m.path;
+    markDirty();
+  } else if (m.type === 'saved') {
+    if (m.ok) { dirty = false; status('saved ' + new Date().toLocaleTimeString()); post({ cmd: 'load' }); }
+    else status('save failed: ' + m.error, true);
+  } else if (m.type === 'launched') {
+    status('tuner started');
+    if (document.body.classList.contains('wizard')) setTimeout(() => post({ cmd: 'quit' }), 400);
+  } else if (m.type === 'error') {
+    status(m.text, true);
+  }
+});
+post({ cmd: 'load' });
+</script>
+</body>
+</html>

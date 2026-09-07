@@ -1,0 +1,13 @@
+/target/
+/content/
+/dist/
+*.png
+*.ppm
+*.zip
+*.lnk
+!docs/*.png
+!assets/icon_64.png
+tuner_settings.json
+tuner_lineup.json
+*_crash.log
+.cargo/config.toml
