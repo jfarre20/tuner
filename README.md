@@ -12,8 +12,9 @@ the same grid as an interactive guide.
 
 Tuning is instant. Every channel owns a demuxer + decoder pipeline that background workers keep
 primed at the keyframe just before "now", so a channel change is a pointer swap plus one frame.
-Video decodes through D3D11VA and is presented with a single-pass D3D11 shader; the CRT pass is
-optional.
+Rust + FFmpeg. On Windows video decodes through D3D11VA and is presented with a Direct3D 11
+shader; on Linux it decodes in software and is presented through wgpu (Vulkan, OpenGL fallback).
+The CRT pass is optional on both.
 
 <p align="center"><img src="docs/channel.png" width="720" alt="Channel with info banner, CRT pass on"></p>
 <p align="center"><img src="docs/guide.png" width="720" alt="Prevue-style guide"></p>
@@ -91,7 +92,7 @@ tuner [<dir>] [--channels N] [--music DIR] [--crt] [--sw] [--start N] [--bench N
 | `--channels N` | Number of channels to deal the files across (default: `channels` from settings) |
 | `--music DIR` | Folder of audio files for the guide's hold music (default: `music_dir` from settings) |
 | `--crt` | Start with the CRT pass on |
-| `--sw` | Software decode instead of D3D11VA |
+| `--sw` | Software decode instead of hardware (D3D11VA on Windows; Linux is always software) |
 | `--start N` | Channel to start on (default 1) |
 | `--bench N` | Automated random tunes at key-repeat speed, then print latency stats and exit |
 | `--shot MS` | Dump one frame to `bench_last.ppm` after MS milliseconds and exit |
@@ -139,7 +140,8 @@ set up wizard to pick your video folder and the optional extras. `TUNER Setup.ex
 editor. Both are small launchers for `bin\tuner.exe` and `bin\tuner-setup.exe`, which sit in
 `bin\` with the FFmpeg DLLs; settings are written there too (or under `%LOCALAPPDATA%\tuner` if
 that folder is read-only). Requirements: Windows
-10 or later and a Direct3D 11 GPU. Optional: the WebView2 runtime (ships with Edge) for
+10 or later and a Direct3D 11 GPU. Linux: `tuner-<version>-linux-x86_64.tar.gz`, needs the distro's
+FFmpeg shared libraries and Vulkan or OpenGL drivers. Optional on Windows: the WebView2 runtime (ships with Edge) for
 `tuner-setup.exe` and the weather channel, and Node.js for the weather channel's local server.
 
 If something goes wrong at startup the tuner shows a dialog and writes `tuner_crash.log` next to
